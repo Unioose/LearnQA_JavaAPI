@@ -1,5 +1,5 @@
 import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
+import io.restassured.http.Headers;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,6 @@ import java.util.*;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HelloWorldTest {
 
@@ -38,20 +37,55 @@ public class HelloWorldTest {
 
     @Test
     public void testRestAssured(){
-        Properties properties = new Properties();
-        String test = baseUrl+basePath;
-        System.out.println(test);
-        Map<String,String> params = new HashMap<>();
-        params.put("name", "John");
-        JsonPath response = given()
-                .queryParams(params)
-                .get(baseUrl+basePath+"/hello")
-                .jsonPath();
-        String answer = response.get("answer");
-        String name = response.get("answer2");
-        assertNotNull(answer);
-        // assertNotNull(name); //Упадёт т.к. answer2 отсутствует в ответе
-        System.out.println(answer);
+        Response response = RestAssured
+                .given()
+                .redirects()
+                .follow(false)
+                .when()
+                .get(baseUrl+basePath+"/get_303")
+                .andReturn();
+
+        int statusCode = response.getStatusCode();
+        System.out.println(statusCode);
+        response.print();
+        String locationHeader = response.getHeader("location");
+        System.out.println(locationHeader);
+    }
+
+    @Test
+    public void testRestAssured2(){
+        Map <String, Object> data = new HashMap<>();
+        data.put("login","secret_login");
+        data.put("password","secret_pass");
+        Response response = RestAssured
+                .given()
+                .body(data)
+                .when()
+                .post(baseUrl+basePath+"/get_auth_cookie")
+                .andReturn();
+
+        System.out.println("\nPretty text:");
+        response.prettyPrint();
+
+        System.out.println("\nHeaders:");
+        Headers responseHeaders = response.getHeaders();
+        System.out.println(responseHeaders);
+
+        System.out.println("\nCookies:");
+        String responseCookie = response.getCookie("auth_cookie");
+        System.out.println(responseCookie);
+
+        Map<String,String> cookies = new HashMap<>();
+        cookies.put("auth_cookie", responseCookie);
+        Response checkAuth = RestAssured
+                .given()
+                .body(data)
+                .cookies(cookies)
+                .when()
+                .post(baseUrl+basePath+"/check_auth_cookie")
+                .andReturn();
+
+        checkAuth.print();
     }
 
     @Test
@@ -79,5 +113,41 @@ public class HelloWorldTest {
         }
         else System.out.println(allMessages.get(1).get("message"));
 
+    }
+
+    @Test
+    public void testRedirect(){
+        int statusCode = 0;
+        String redirectURL = "https://playground.learnqa.ru/api/long_redirect";
+        String URL = redirectURL;
+        ArrayList<String> redirectPath = new ArrayList<String>();
+        while(statusCode != 200){
+            Response response = RestAssured
+                    .given()
+                    .redirects()
+                    .follow(false)
+                    .when()
+                    .get(URL)
+                    .andReturn();
+
+            statusCode = response.getStatusCode();
+            if (statusCode <199|| statusCode>399)
+            {
+                System.out.println("Запрос вернулся с кодом: "+statusCode);
+                break;
+            }
+            URL = response.getHeader("location");
+            if(URL != null)
+            {
+                System.out.println("Осуществлен редирект на:");
+                System.out.println(URL);
+                redirectPath.add(URL);
+            }
+        }
+
+        assertEquals(200,statusCode);
+        if (!redirectPath.isEmpty()) {
+            System.out.printf("Полный путь редиректа c %s: %s%n", redirectURL, String.join(" -> ", redirectPath));
+        }
     }
 }
