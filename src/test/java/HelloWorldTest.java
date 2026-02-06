@@ -120,7 +120,7 @@ public class HelloWorldTest {
         int statusCode = 0;
         String redirectURL = "https://playground.learnqa.ru/api/long_redirect";
         String URL = redirectURL;
-        ArrayList<String> redirectPath = new ArrayList<String>();
+        ArrayList<String> redirectPath = new ArrayList<>();
         while(statusCode != 200){
             Response response = RestAssured
                     .given()
