@@ -91,7 +91,7 @@ public class HelloWorldTest {
     @Test
     public void testGetText(){
         Response response = RestAssured
-                .get(baseUrl + "/get_text")
+                .get(baseUrl+basePath+"/get_text")
                 .andReturn();
         response.prettyPrint();
         String body = response.getBody().asString();
