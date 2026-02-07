@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HelloWorldTest {
 
@@ -37,8 +37,7 @@ public class HelloWorldTest {
 
     @Test
     public void testRestAssured(){
-        Response response = RestAssured
-                .given()
+        Response response = given()
                 .redirects()
                 .follow(false)
                 .when()
@@ -57,8 +56,7 @@ public class HelloWorldTest {
         Map <String, Object> data = new HashMap<>();
         data.put("login","secret_login");
         data.put("password","secret_pass");
-        Response response = RestAssured
-                .given()
+        Response response = given()
                 .body(data)
                 .when()
                 .post(baseUrl+basePath+"/get_auth_cookie")
@@ -77,8 +75,7 @@ public class HelloWorldTest {
 
         Map<String,String> cookies = new HashMap<>();
         cookies.put("auth_cookie", responseCookie);
-        Response checkAuth = RestAssured
-                .given()
+        Response checkAuth = given()
                 .body(data)
                 .cookies(cookies)
                 .when()
@@ -122,8 +119,7 @@ public class HelloWorldTest {
         String URL = redirectURL;
         ArrayList<String> redirectPath = new ArrayList<>();
         while(statusCode != 200){
-            Response response = RestAssured
-                    .given()
+            Response response = given()
                     .redirects()
                     .follow(false)
                     .when()
@@ -149,5 +145,45 @@ public class HelloWorldTest {
         if (!redirectPath.isEmpty()) {
             System.out.printf("Полный путь редиректа c %s: %s%n", redirectURL, String.join(" -> ", redirectPath));
         }
+    }
+
+    @Test
+    public void testToken() throws InterruptedException {
+        String URL = baseUrl+basePath+"/longtime_job";
+        Response createTask = RestAssured
+                .get(URL);
+
+        Map<String, Object> responseMap = createTask.jsonPath().getMap("");
+        String token = responseMap.get("token").toString();
+        Integer seconds = (Integer) responseMap.get("seconds");
+
+        System.out.println("Token: " + token);
+        System.out.println("Seconds: " + seconds);
+
+        int cycleLifetime = seconds + 10;
+        int interval = 1;
+        String result = "";
+        int realTimeOfTaskCompletion = 0;
+
+        for(int i = 0; i<cycleLifetime; i+=interval)
+        {
+            Response taskStatus = RestAssured
+                    .given()
+                    .queryParam("token", responseMap.get("token"))
+                    .get(URL);
+            if(i==0){
+                assertEquals("Job is NOT ready", taskStatus.jsonPath().getString("status "));
+            }
+            if("Job is ready".equals(taskStatus.jsonPath().getString("status "))){
+                realTimeOfTaskCompletion = i;
+                result = taskStatus.jsonPath().getString("result");
+                break;
+            }
+            Thread.sleep(interval*1000L);
+        }
+        assertNotNull(result);
+        assertTrue(realTimeOfTaskCompletion<cycleLifetime);
+        System.out.printf("Примерное время завершения задачи: %d%n", realTimeOfTaskCompletion);
+        System.out.printf("Результат выполнения задачи: %s%n", result);
     }
 }
