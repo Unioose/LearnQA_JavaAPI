@@ -18,7 +18,7 @@ public class Assertions {
         Response.then().assertThat().body("$", hasKey(name));
 
         String value = Response.jsonPath().getString(name);
-        assertEquals(expectedValue, value, "JSON value in param"+name+" is not equal to expected value");
+        assertEquals(expectedValue, value, "JSON value in param "+name+" is not equal to expected value");
     }
 
     public static void assertCookie(Response Response, String cookieName, String expectedValue)
