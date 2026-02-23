@@ -1,14 +1,28 @@
 package lib;
 
+import org.junit.jupiter.params.provider.Arguments;
+
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.Stream;
 
 public class DataGenerator {
 
     public static String getRandomEmail(){
         String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
         return "learnqa" + timestamp + "@example.com";
+    }
+
+    public static String getString(int numberOfCharacters){
+        Random random = new Random();
+        char randomChar = (char) ('A' + random.nextInt(26));
+        StringBuilder sb = new StringBuilder(numberOfCharacters);
+        for (int i = 0; i < numberOfCharacters; i++) {
+            sb.append(randomChar);
+        }
+        return sb.toString();
     }
 
     public static Map<String, String> getRegistrationData(){
@@ -35,5 +49,15 @@ public class DataGenerator {
             }
         }
         return userData;
+    }
+
+    public Stream<Arguments> provideMissingFieldScenarios() {
+        return Stream.of(
+                Arguments.of("email", null, "password123", "testuser", "Test", "User"),
+                Arguments.of("password", "test@example.com", null, "testuser", "Test", "User"),
+                Arguments.of("username", "test@example.com", "password123", null, "Test", "User"),
+                Arguments.of("firstName", "test@example.com", "password123", "testuser", null, "User"),
+                Arguments.of("lastName", "test@example.com", "password123", "testuser", "Test", null)
+        );
     }
 }
