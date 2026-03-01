@@ -56,6 +56,7 @@ public class ApiCoreRequests {
         return requestSpec.put(url).andReturn();
     }
 
+    @Step("Make DELETE-request")
     public Response makeDeleteRequest(String url, String token, String cookie) {
         RequestSpecification requestSpec = given()
                 .filter(new AllureRestAssured());
