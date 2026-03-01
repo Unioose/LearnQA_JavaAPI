@@ -55,4 +55,18 @@ public class ApiCoreRequests {
 
         return requestSpec.put(url).andReturn();
     }
+
+    public Response makeDeleteRequest(String url, String token, String cookie) {
+        RequestSpecification requestSpec = given()
+                .filter(new AllureRestAssured());
+
+        if (token != null) {
+            requestSpec.header(new Header("x-csrf-token", token));
+        }
+        if (cookie != null) {
+            requestSpec.cookie("auth_sid", cookie);
+        }
+
+        return requestSpec.delete(url).andReturn();
+    }
 }

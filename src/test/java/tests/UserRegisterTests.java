@@ -57,12 +57,11 @@ public class UserRegisterTests extends BaseTestCase {
 
         Response responseCreateAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/", userData);
 
-        Assertions.assertResponseCodeEquals(responseCreateAuth, 400);
-        Assertions.assertResponseTextEquals(responseCreateAuth, "Users with email '"+ email +"' already exists");
+        Assertions.assertErrorResponse(responseCreateAuth, 400, "Users with email '"+ email +"' already exists");
     }
 
     @Test
-    @Description("Должен возвращать идентификатор зарегестрированного пользователя")
+    @Description("Должен возвращать идентификатор зарегистрированного пользователя")
     @DisplayName("Регистрация пользователя с валидными данными")
     public void testCreateUserSuccessfully(){
         Map<String, String> userData = DataGenerator.getRegistrationData();
@@ -83,8 +82,7 @@ public class UserRegisterTests extends BaseTestCase {
         userData = DataGenerator.getRegistrationData(userData);
         Response responseCreateAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/", userData);
 
-        Assertions.assertResponseCodeEquals(responseCreateAuth, 400);
-        Assertions.assertResponseTextEquals(responseCreateAuth, "Invalid email format");
+        Assertions.assertErrorResponse(responseCreateAuth, 400, "Invalid email format");
     }
 
     @ParameterizedTest(name = "{0}")
@@ -101,8 +99,7 @@ public class UserRegisterTests extends BaseTestCase {
         userData.put("lastName", lastName);
         Response responseCreateAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/", userData);
 
-        Assertions.assertResponseCodeEquals(responseCreateAuth, 400);
-        Assertions.assertResponseTextEquals(responseCreateAuth, "The following required params are missed: " +testName);
+        Assertions.assertErrorResponse(responseCreateAuth, 400, "The following required params are missed: " +testName);
     }
 
     @Test
@@ -116,14 +113,14 @@ public class UserRegisterTests extends BaseTestCase {
 
         Response responseCreateAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/", userData);
 
-        Assertions.assertResponseCodeEquals(responseCreateAuth, 400);
-        Assertions.assertResponseTextEquals(responseCreateAuth, "The value of 'username' field is too short");
+        Assertions.assertErrorResponse(responseCreateAuth, 400, "The value of 'username' field is too short");
+
     }
 
     @Test
     @Description("Должен возвращать ошибку при попытке регистрации с длинным username")
     @DisplayName("Регистрация с длинным username")
-    public void testCreateUserWithLongtUserName(){
+    public void testCreateUserWithLongUserName(){
         String invalidIUserName = DataGenerator.getString(251);
         Map<String, String> userData = new HashMap<>();
         userData.put("username", invalidIUserName);
@@ -131,7 +128,6 @@ public class UserRegisterTests extends BaseTestCase {
 
         Response responseCreateAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/", userData);
 
-        Assertions.assertResponseCodeEquals(responseCreateAuth, 400);
-        Assertions.assertResponseTextEquals(responseCreateAuth, "The value of 'username' field is too long");
+        Assertions.assertErrorResponse(responseCreateAuth, 400, "The value of 'username' field is too long");
     }
 }

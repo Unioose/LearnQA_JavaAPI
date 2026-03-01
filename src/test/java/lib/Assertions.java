@@ -3,6 +3,7 @@ package lib;
 import io.restassured.response.Response;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Assertions {
@@ -69,4 +70,34 @@ public class Assertions {
         for(String unexpectedFiledName : unexpectedFieldNames)
             Assertions.assertJsonHasNotField(Response, unexpectedFiledName);
     }
+
+    public static void assertErrorResponse(Response Response, int expectedStatusCode, String expectedErrorMessage)
+    {
+        assertAll("Проверка ошибочного ответа",
+                () -> Assertions.assertResponseCodeEquals(Response, expectedStatusCode),
+                () -> {
+                    String actualErrorMessage = null;
+                    try {
+                        actualErrorMessage = Response.jsonPath().getString("error");
+                    }catch (Exception ignored){
+
+                    }
+                    if (actualErrorMessage == null) {
+                        Assertions.assertResponseTextEquals(Response, expectedErrorMessage);
+                    }
+                    else {
+                        Assertions.assertJsonByName(Response, "error", expectedErrorMessage);
+                        }
+                }
+        );
+    }
+
+    public static void assertSuccessResponse(Response Response, int expectedStatusCode, String expectedParamName, String expectedValue)
+    {
+        assertAll("Проверка успешного ответа",
+                () -> Assertions.assertResponseCodeEquals(Response, expectedStatusCode),
+                () -> Assertions.assertJsonByName(Response, expectedParamName, expectedValue)
+        );
+    }
+
 }

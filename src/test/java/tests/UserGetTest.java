@@ -3,7 +3,6 @@ package tests;
 import io.qameta.allure.Description;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import lib.Assertions;
 import lib.BaseTestCase;
@@ -12,14 +11,12 @@ import lib.DataGenerator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 @Epic("User info cases")
 @Feature("Get user info by id")
@@ -28,6 +25,13 @@ public class UserGetTest extends BaseTestCase {
     private static String baseUrl;
     private static String basePath;
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
+
+    private Response loginUser(String email, String password) {
+        Map<String, String> authData = new HashMap<>();
+        authData.put("email", email);
+        authData.put("password", password);
+        return apiCoreRequests.makePostRequest(baseUrl + basePath + "/user/login", authData);
+    }
 
     @BeforeAll
     public static void setUp() throws IOException {
@@ -55,11 +59,7 @@ public class UserGetTest extends BaseTestCase {
     @Description("Должен возвращать всю информацию о пользователе")
     @DisplayName("Получение информации о пользователе авторизованным тем же пользователем")
     public void testGetUserDetailsAuthAsSameUser(){
-        Map<String,String> authData = new HashMap<>();
-        authData.put("email", "vinkotov@example.com");
-        authData.put("password", "1234");
-
-        Response responseGetAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/login", authData);
+        Response responseGetAuth = loginUser("vinkotov@example.com", "1234");
         String cookie = this.getCookie(responseGetAuth, "auth_sid");
         String header = this.getHeader(responseGetAuth, "x-csrf-token");
 
@@ -76,7 +76,6 @@ public class UserGetTest extends BaseTestCase {
         String emailFirstUser = DataGenerator.getRandomEmail();
 
         Map<String, String> userData = new HashMap<>();
-        Map<String, String> authData = new HashMap<>();
 
         String[] unexpectedFields = {"firstName", "lastName", "email"};
 
@@ -87,10 +86,7 @@ public class UserGetTest extends BaseTestCase {
         String userId = responseCreateFirstUser.jsonPath().getString("id");
 
         //Авторизация за пользователя
-        authData.put("email", emailFirstUser);
-        authData.put("password", "123");
-
-        Response responseGetAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/login", authData);
+        Response responseGetAuth = loginUser(emailFirstUser, "123");
         String cookie = this.getCookie(responseGetAuth, "auth_sid");
         String header = this.getHeader(responseGetAuth, "x-csrf-token");
 
@@ -100,10 +96,8 @@ public class UserGetTest extends BaseTestCase {
         Assertions.assertJsonHasField(responseUserData,"username");
         Assertions.assertJsonHasNotFields(responseUserData, unexpectedFields);
 
-        //Дополнительная проверка что ранее созданные пользователи так же не получают данные другого пользователя
-        authData.put("email", "vinkotov@example.com");
-        authData.put("password", "1234");
-        responseGetAuth = apiCoreRequests.makePostRequest(baseUrl+basePath+"/user/login", authData);
+        //Дополнительная проверка, что ранее созданные пользователи так же не получают данные другого пользователя
+        responseGetAuth = loginUser("vinkotov@example.com", "1234");
         cookie = this.getCookie(responseGetAuth, "auth_sid");
         header = this.getHeader(responseGetAuth, "x-csrf-token");
 
